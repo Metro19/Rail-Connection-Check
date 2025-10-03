@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
@@ -9,6 +9,9 @@ from fetch_amtrak_json import fetch_json
 engine = create_engine("")
 Base.metadata.create_all(engine)
 amtrak_data = fetch_json()
+
+def generate_start_train_code(starting_code: str) -> str:
+    return ""
 
 def store_route_info(data: dict):
     # make one call to get all the route codes in the database
@@ -57,5 +60,7 @@ def store_station_info(data: dict, all_station_codes: List[str]) -> list:
 
     return new_objects
 
+def store_train_info(data: dict):
+    pass
 
 # store_route_info(amtrak_data)
