@@ -1,17 +1,42 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from db import Route, Base, RouteStop, Station
+from db import Route, Base, RouteStop, Station, Stop, Train
 from fetch_amtrak_json import fetch_json
 
 engine = create_engine("")
 Base.metadata.create_all(engine)
 amtrak_data = fetch_json()
 
-def generate_start_train_code(starting_code: str) -> str:
-    return ""
+
+def generate_train_code(starting_code: str, starting_stop_departure: str) -> str:
+    """
+    Generate a unique train code based on starting station code and date of departure
+
+    :param starting_code: Train starting station code
+    :param starting_stop_departure: Departure time of the starting station in ISO format
+    :return: String representing the unique train code
+    """
+
+    start_departure = datetime.fromisoformat(starting_stop_departure)
+
+    return f"{starting_code}_{start_departure.strftime('%Y%m%d')}"
+
+def to_time(time_str: str) -> Optional[datetime]:
+    """
+    Convert ISO format time string to datetime object if applicable
+
+    :param time_str: ISO format time string
+    :return: Resulting datetime object or None
+    """
+
+    if time_str:
+        return datetime.fromisoformat(time_str)
+
+    return None
 
 def store_route_info(data: dict):
     # make one call to get all the route codes in the database
@@ -43,6 +68,7 @@ def store_route_info(data: dict):
         session.add_all(new_objects)
         session.commit()
 
+
 def store_station_info(data: dict, all_station_codes: List[str]) -> list:
     new_objects: list = [Route(num=data["trainNum"], name=data["routeName"])]
 
@@ -57,10 +83,64 @@ def store_station_info(data: dict, all_station_codes: List[str]) -> list:
         # create connector between route and station
         new_objects.append(RouteStop(route_id=data["trainNum"], station_code=station["code"]))
 
-
     return new_objects
 
-def store_train_info(data: dict):
-    pass
 
-# store_route_info(amtrak_data)
+def store_train_info(data: dict):
+    with Session(engine) as session:
+        for route in data.keys():
+            # get each train
+            for train in data[route]:
+
+                # store train object
+                store_one_train(session, train)
+
+                train_code = generate_train_code(train["trainNum"], train["stations"][0]["schDep"])
+
+                # save each stop object
+                for station in train["stations"]:
+                    store_one_station_time(session, train_code, station)
+
+        # commit
+        session.commit()
+
+
+def store_one_train(session: Session, train_obj: dict):
+    train_code = generate_train_code(train_obj["trainNum"], train_obj["stations"][0]["schDep"])
+    train_val = session.scalar(select(Train).where(Train.train_id == train_code))
+    train = Train()
+
+    # check if train is already stored
+    if train_val is not None:
+        train = train_val
+
+    # store values
+    train.train_id = train_code
+    train.route_id = train_obj["trainNum"]
+
+    session.add(train)
+
+
+def store_one_station_time(session: Session, train_code: str, stop_obj: dict):
+    stop = Stop()
+
+    # check if stop is already stored
+    stop_val = session.scalar(select(Stop).where(Stop.train_id == train_code, Stop.station_id == stop_obj["code"]))
+    if stop_val is not None:
+        stop = stop_val
+
+    # store values
+    stop.train_id = train_code
+    stop.station_id = stop_obj["code"]
+    stop.sch_arr = to_time(stop_obj.get("schArr"))
+    stop.sch_dep = to_time(stop_obj.get("schDep"))
+    stop.arr = to_time(stop_obj.get("arr"))
+    stop.dep = to_time(stop_obj.get("dep"))
+    stop.bus = stop_obj["bus"]
+    stop.platform = stop_obj["platform"]
+
+    session.add(stop)
+
+if __name__ == "__main__":
+    store_route_info(amtrak_data)
+    store_train_info(amtrak_data)

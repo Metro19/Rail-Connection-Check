@@ -37,7 +37,7 @@ class Train(Base):
     train_id: Mapped[str] = mapped_column(primary_key=True)
 
     route_id: Mapped[str] = mapped_column(ForeignKey("route.num"))
-    route: Mapped[Route] = relationship("route")
+    route: Mapped[Route] = relationship("Route")
 
 class Stop(Base):
     __tablename__ = "stop"
@@ -49,8 +49,9 @@ class Stop(Base):
     arr: Mapped[datetime] = mapped_column(nullable=True)
     dep: Mapped[datetime] = mapped_column(nullable=True)
     bus: Mapped[bool] = mapped_column()
+    platform: Mapped[str] = mapped_column()
 
-    station_id: Mapped[str] = mapped_column(ForeignKey(""))
+    station_id: Mapped[str] = mapped_column(ForeignKey("station.stop_code"))
     train_id: Mapped[str] = mapped_column(ForeignKey("train.train_id"))
 
     station: Mapped[Station] = relationship("Station")
