@@ -1,16 +1,17 @@
 from datetime import datetime
 from typing import List, Optional
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from db import Route, Base, RouteStop, Station, Stop, Train
 from fetch_amtrak_json import fetch_json
 
-engine = create_engine("")
+engine = create_engine("postgresql+psycopg://postgres:admin@localhost/RailConnectionChecker")
 Base.metadata.create_all(engine)
-amtrak_data = fetch_json()
 
+scheduler = BackgroundScheduler()
 
 def generate_train_code(starting_code: str, starting_stop_departure: str) -> str:
     """
@@ -39,6 +40,12 @@ def to_time(time_str: str) -> Optional[datetime]:
     return None
 
 def store_route_info(data: dict):
+    """
+
+    :param data:
+    :return:
+    """
+
     # make one call to get all the route codes in the database
     all_routes = []
     all_stations = []
@@ -70,6 +77,14 @@ def store_route_info(data: dict):
 
 
 def store_station_info(data: dict, all_station_codes: List[str]) -> list:
+    """
+    Store the info of one station
+
+    :param data: Station object from API
+    :param all_station_codes: List of existing stations
+    :return: List of Stations and RouteStops to add to DB
+    """
+
     new_objects: list = [Route(num=data["trainNum"], name=data["routeName"])]
 
     for station in data["stations"]:
@@ -87,6 +102,13 @@ def store_station_info(data: dict, all_station_codes: List[str]) -> list:
 
 
 def store_train_info(data: dict):
+    """
+    Store the info of all live trains
+
+    :param data: Train data from API
+    :return: None
+    """
+
     with Session(engine) as session:
         for route in data.keys():
             # get each train
@@ -106,6 +128,14 @@ def store_train_info(data: dict):
 
 
 def store_one_train(session: Session, train_obj: dict):
+    """
+    Store the info of one live train object
+
+    :param session: SQLAlchemy session
+    :param train_obj: Train object from API to store
+    :return: None
+    """
+
     train_code = generate_train_code(train_obj["trainNum"], train_obj["stations"][0]["schDep"])
     train_val = session.scalar(select(Train).where(Train.train_id == train_code))
     train = Train()
@@ -122,6 +152,15 @@ def store_one_train(session: Session, train_obj: dict):
 
 
 def store_one_station_time(session: Session, train_code: str, stop_obj: dict):
+    """
+    Store one train visit to a station
+
+    :param session: SQLAlchemy
+    :param train_code:
+    :param stop_obj:
+    :return:
+    """
+
     stop = Stop()
 
     # check if stop is already stored
@@ -141,6 +180,17 @@ def store_one_station_time(session: Session, train_code: str, stop_obj: dict):
 
     session.add(stop)
 
-if __name__ == "__main__":
+@scheduler.scheduled_job('interval', hours=1)
+def get_data():
+    print("Fetching data")
+
+    # get data
+    amtrak_data = fetch_json()
+
+    # store the info
     store_route_info(amtrak_data)
     store_train_info(amtrak_data)
+
+if __name__ == "__main__":
+    print("Started code.")
+    get_data()

@@ -3,13 +3,13 @@ import json
 import requests
 
 def fetch_json():
-    # req = requests.get("https://api-v3.amtraker.com/v3/trains")
-    #
-    # save_json_to_file(req.json(), "TEST.pkl")
-    #
-    # return req.json()
+    req = requests.get("https://api-v3.amtraker.com/v3/trains")
 
-    return read_json_from_file("TEST.pkl")
+    # save_json_to_file(req.json(), "TEST.pkl")
+
+    return req.json()
+
+    # return read_json_from_file("TEST.pkl")
 
 # the below code is just for testing
 def save_json_to_file(data, filename):
