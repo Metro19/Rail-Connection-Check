@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Engine, create_engine, nullsfirst
+from sqlalchemy import ForeignKey, Engine, create_engine, nullsfirst, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, relationship, Session
 from sqlalchemy.testing.schema import mapped_column
 
@@ -44,18 +44,36 @@ class Stop(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    sch_arr: Mapped[datetime] = mapped_column()
-    sch_dep: Mapped[datetime] = mapped_column()
-    arr: Mapped[datetime] = mapped_column(nullable=True)
-    dep: Mapped[datetime] = mapped_column(nullable=True)
+    sch_arr: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    sch_dep: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    arr: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    dep: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     bus: Mapped[bool] = mapped_column()
     platform: Mapped[str] = mapped_column()
 
     station_id: Mapped[str] = mapped_column(ForeignKey("station.stop_code"))
     train_id: Mapped[str] = mapped_column(ForeignKey("train.train_id"))
+    route_id: Mapped[str] = mapped_column(ForeignKey("route.num"))
 
     station: Mapped[Station] = relationship("Station")
     train: Mapped[Train] = relationship("Train")
+    route: Mapped[Route] = relationship("Route")
+
+    def __repr__(self):
+        return f"STOP: {self.station_id} {self.train_id} ({self.route_id}) {self.sch_arr.isoformat()}"
+
+    def to_json(self):
+        return {
+            "station_id": self.station_id,
+            "train_id": self.train_id,
+            "route_id": self.route_id,
+            "sch_arr": self.sch_arr.isoformat(),
+            "sch_dep": self.sch_dep.isoformat(),
+            "arr": self.arr.isoformat() if self.arr else None,
+            "dep": self.dep.isoformat() if self.dep else None,
+            "bus": self.bus,
+            "platform": self.platform
+        }
 
 
 # Base.metadata.create_all(engine)

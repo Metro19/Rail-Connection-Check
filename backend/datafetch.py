@@ -4,11 +4,12 @@ from typing import List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
+from pytz import timezone
 
 from db import Route, Base, RouteStop, Station, Stop, Train
 from fetch_amtrak_json import fetch_json
 
-engine = create_engine("postgresql+psycopg://postgres:admin@localhost/RailConnectionChecker")
+engine = create_engine("postgresql+psycopg://postgres:admin@localhost/RailConnectionCheck")
 Base.metadata.create_all(engine)
 
 scheduler = BackgroundScheduler()
@@ -26,15 +27,29 @@ def generate_train_code(starting_code: str, starting_stop_departure: str) -> str
 
     return f"{starting_code}_{start_departure.strftime('%Y%m%d')}"
 
-def to_time(time_str: str) -> Optional[datetime]:
+def to_time(time_str: str, tz: str = "US/Eastern") -> Optional[datetime]:
     """
     Convert ISO format time string to datetime object if applicable
 
-    :param time_str: ISO format time string
+    :param time_str: ISO format time string in UTC
+    :param tz: Timezone to convert to
     :return: Resulting datetime object or None
     """
 
     if time_str:
+        # don't ask me why but VIA rail data is all in UTC
+        # so we need to convert that
+
+        if "Z" in time_str:
+            raw_datetime = datetime.fromisoformat(time_str)
+            raw_datetime = raw_datetime.replace(tzinfo=timezone("UTC"))
+            local_tz = timezone(tz)
+
+            return raw_datetime.astimezone(local_tz)
+
+        else:
+            return datetime.fromisoformat(time_str)
+
         return datetime.fromisoformat(time_str)
 
     return None
@@ -67,8 +82,10 @@ def store_route_info(data: dict):
 
         # check if route is in saved data
         if route not in all_routes:
-            all_routes.append(route)
-            new_objects += store_station_info(data[route][0], all_stations)
+            new_objects.append(Route(num=data["trainNum"], name=data["routeName"]))
+
+        all_routes.append(route)
+        new_objects += store_station_info(data[route][0], all_stations)
 
     # save all new objects
     with Session(engine) as session:
@@ -85,7 +102,7 @@ def store_station_info(data: dict, all_station_codes: List[str]) -> list:
     :return: List of Stations and RouteStops to add to DB
     """
 
-    new_objects: list = [Route(num=data["trainNum"], name=data["routeName"])]
+    new_objects: list = []
 
     for station in data["stations"]:
         # check if station has already been created
@@ -171,10 +188,11 @@ def store_one_station_time(session: Session, train_code: str, stop_obj: dict):
     # store values
     stop.train_id = train_code
     stop.station_id = stop_obj["code"]
-    stop.sch_arr = to_time(stop_obj.get("schArr"))
-    stop.sch_dep = to_time(stop_obj.get("schDep"))
-    stop.arr = to_time(stop_obj.get("arr"))
-    stop.dep = to_time(stop_obj.get("dep"))
+    stop.route_id = train_code.split("_")[0]
+    stop.sch_arr = to_time(stop_obj.get("schArr"), stop_obj.get("tz"))
+    stop.sch_dep = to_time(stop_obj.get("schDep"), stop_obj.get("tz"))
+    stop.arr = to_time(stop_obj.get("arr"), stop_obj.get("tz"))
+    stop.dep = to_time(stop_obj.get("dep"), stop_obj.get("tz"))
     stop.bus = stop_obj["bus"]
     stop.platform = stop_obj["platform"]
 
