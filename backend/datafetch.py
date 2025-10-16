@@ -9,7 +9,7 @@ from pytz import timezone
 from db import Route, Base, RouteStop, Station, Stop, Train
 from fetch_amtrak_json import fetch_json
 
-engine = create_engine("postgresql+psycopg://postgres:admin@localhost/RailConnectionCheck")
+engine = create_engine("postgresql+psycopg://postgres:admin@localhost/RailConnectionChecker")
 Base.metadata.create_all(engine)
 
 scheduler = BackgroundScheduler()
@@ -50,7 +50,6 @@ def to_time(time_str: str, tz: str = "US/Eastern") -> Optional[datetime]:
         else:
             return datetime.fromisoformat(time_str)
 
-        return datetime.fromisoformat(time_str)
 
     return None
 
@@ -82,10 +81,11 @@ def store_route_info(data: dict):
 
         # check if route is in saved data
         if route not in all_routes:
-            new_objects.append(Route(num=data["trainNum"], name=data["routeName"]))
+            new_objects.append(Route(num=data[route][0]["trainNum"], name=data[route][0]["routeName"]))
 
         all_routes.append(route)
-        new_objects += store_station_info(data[route][0], all_stations)
+        for train_instance in data[route]:
+            new_objects += store_station_info(train_instance, all_stations)
 
     # save all new objects
     with Session(engine) as session:
