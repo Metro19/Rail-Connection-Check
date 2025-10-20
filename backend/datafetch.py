@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
 
-from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from pytz import timezone
@@ -9,10 +8,9 @@ from pytz import timezone
 from db import Route, Base, RouteStop, Station, Stop, Train
 from fetch_amtrak_json import fetch_json
 
-engine = create_engine("postgresql+psycopg://postgres:admin@localhost/RailConnectionChecker")
+engine = create_engine("")
 Base.metadata.create_all(engine)
 
-scheduler = BackgroundScheduler()
 
 def generate_train_code(starting_code: str, starting_stop_departure: str) -> str:
     """
@@ -110,7 +108,7 @@ def store_station_info(data: dict, all_station_codes: List[str]) -> list:
             all_station_codes.append(station["code"])
 
             # create station object
-            new_objects.append(Station(stop_code=station["code"], name=station["name"]))
+            new_objects.append(Station(stop_code=station["code"], name=station["name"], timezone=station["tz"]))
 
         # create connector between route and station
         new_objects.append(RouteStop(route_id=data["trainNum"], station_code=station["code"]))
@@ -198,7 +196,6 @@ def store_one_station_time(session: Session, train_code: str, stop_obj: dict):
 
     session.add(stop)
 
-@scheduler.scheduled_job('interval', hours=1)
 def get_data():
     print("Fetching data")
 

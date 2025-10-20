@@ -27,11 +27,13 @@ export function DayView({stopOne, stopTwo, day} : {stopOne: StopData | null, sto
 
         connectionText = `${diffTime.hours && diffTime.hours + 'h'} ${diffTime.minutes +'m'}`;
     }
+    
+    const bColor = borderColor ? `1px ${borderColor} solid` : undefined
 
     return (
         <Popover>
             <Popover.Target>
-                <Box style={{border: borderColor && `1px ${borderColor} solid`, borderRadius: "1rem"}} bg={bgColor}>
+                <Box style={{border: bColor, borderRadius: "1rem"}} bg={bgColor}>
                     <Text ta={"center"} pt={"xl"} pb={"xl"}>{connectionText}</Text>
                 </Box>
             </Popover.Target>

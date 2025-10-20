@@ -20,4 +20,4 @@ def read_json_from_file(filename):
     with open(filename, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-print(fetch_json())
+# print(fetch_json())

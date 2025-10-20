@@ -19,6 +19,7 @@ class Station(Base):
 
     stop_code: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column()
+    timezone: Mapped[str] = mapped_column()
 
 class RouteStop(Base):
     __tablename__ = "route_stop"
@@ -44,12 +45,12 @@ class Stop(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    sch_arr: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    sch_dep: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    arr: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    dep: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    sch_arr: Mapped[datetime] = mapped_column()
+    sch_dep: Mapped[datetime] = mapped_column()
+    arr: Mapped[datetime] = mapped_column(nullable=True)
+    dep: Mapped[datetime] = mapped_column(nullable=True)
     bus: Mapped[bool] = mapped_column()
-    platform: Mapped[str] = mapped_column()
+    platform: Mapped[str] = mapped_column(nullable=True)
 
     station_id: Mapped[str] = mapped_column(ForeignKey("station.stop_code"))
     train_id: Mapped[str] = mapped_column(ForeignKey("train.train_id"))
@@ -60,7 +61,7 @@ class Stop(Base):
     route: Mapped[Route] = relationship("Route")
 
     def __repr__(self):
-        return f"STOP: {self.station_id} {self.train_id} ({self.route_id}) {self.sch_arr.isoformat()}"
+        return f"STOP: {self.station_id} {self.train_id} ({self.route_id})"
 
     def to_json(self):
         return {

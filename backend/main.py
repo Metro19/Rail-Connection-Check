@@ -1,18 +1,28 @@
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from typing import List, Sequence, Union
 
 import pytz
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
 from sqlalchemy import create_engine, select, text, and_
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 
+from datafetch import get_data
 from db import Route, Stop, Station
 
 # CORS setup
 origins = [
    ' http://localhost:5173'
 ]
+
+scheduler = BackgroundScheduler()
+trigger = IntervalTrigger(hours=1,
+                          start_date='2025-01-01 00:00:00')  # <-- CHANGED LINE (run every 24 hours, starting in 2025)
+scheduler.add_job(get_data, trigger)
+scheduler.start()
 
 # setup
 app = FastAPI()
@@ -23,6 +33,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+# Ensure the scheduler shuts down properly on application exit.
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    scheduler.shutdown()
 
 engine = create_engine("postgresql+psycopg://postgres:admin@localhost:5432/RailConnectionChecker")
 
@@ -39,9 +55,9 @@ def generate_train_code(starting_code: str, starting_stop_departure: str) -> str
 
     return f"{starting_code}_{start_departure.strftime('%Y%m%d')}"
 
-@app.get("/")
+@app.get("/ping")
 def read_root():
-    return {"Hello": "World"}
+    return {"success": True}
 
 @app.get("/trains")
 def get_trains():
@@ -217,4 +233,8 @@ def intersecting_stations(route_one: str, route_two: str):
 
     return all_stations
 
-# print(compare_trains('7', '504', 'SEA'))
+if __name__ == "__main__":
+    import uvicorn
+
+    get_data()
+    uvicorn.run(app, host="0.0.0.0", port=8000)
