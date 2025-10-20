@@ -5,10 +5,11 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 from pytz import timezone
 
-from db import Route, Base, RouteStop, Station, Stop, Train
+from db import Route, Base, RouteStop, Station, Stop, Train, create_database_if_not_exists
 from fetch_amtrak_json import fetch_json
 
-engine = create_engine("")
+create_database_if_not_exists()
+engine = create_engine("postgresql+psycopg://postgres:example@rcc_db:5432/RailConnectionChecker")
 Base.metadata.create_all(engine)
 
 
@@ -108,7 +109,7 @@ def store_station_info(data: dict, all_station_codes: List[str]) -> list:
             all_station_codes.append(station["code"])
 
             # create station object
-            new_objects.append(Station(stop_code=station["code"], name=station["name"], timezone=station["tz"]))
+            new_objects.append(Station(stop_code=station["code"], name=station["name"], timezone=station.get("tz")))
 
         # create connector between route and station
         new_objects.append(RouteStop(route_id=data["trainNum"], station_code=station["code"]))

@@ -18,7 +18,7 @@ function TrainSelector({changeTrainOne, changeTrainTwo}:
     const [loading, changeLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        fetch('http://localhost:8000/trains')
+        fetch('/api/trains')
             .then(response => response.json())
             .then(data => {changeTrainData(data); changeLoading(false);})
     }, []);

@@ -10,7 +10,8 @@ from sqlalchemy import create_engine, select, text, and_
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 
-from datafetch import get_data
+import datafetch
+from datafetch import get_data, engine
 from db import Route, Stop, Station
 
 # CORS setup
@@ -40,7 +41,6 @@ async def lifespan(app: FastAPI):
     yield
     scheduler.shutdown()
 
-engine = create_engine("postgresql+psycopg://postgres:admin@localhost:5432/RailConnectionChecker")
 
 def generate_train_code(starting_code: str, starting_stop_departure: str) -> str:
     """
@@ -236,5 +236,5 @@ def intersecting_stations(route_one: str, route_two: str):
 if __name__ == "__main__":
     import uvicorn
 
-    get_data()
+    datafetch.get_data()
     uvicorn.run(app, host="0.0.0.0", port=8000)

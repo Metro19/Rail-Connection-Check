@@ -10,7 +10,7 @@ function TrainViewer({trainOne, trainTwo} : {trainOne: string | null, trainTwo: 
     const [error, changeError] = useState<string | null>("Test Error");
     
     useEffect(() => {
-        fetch(`http://localhost:8000/compare_trains?route_one=${trainOne}&route_two=${trainTwo}`)
+        fetch(`/api/compare_trains?route_one=${trainOne}&route_two=${trainTwo}`)
             .then(response => {
                 if (response.status === 400) {
                     return response.json().then(msg => {

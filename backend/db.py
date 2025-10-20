@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Engine, create_engine, nullsfirst, DateTime
+from sqlalchemy import ForeignKey, Engine, create_engine, nullsfirst, DateTime, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, relationship, Session
 from sqlalchemy.testing.schema import mapped_column
 
@@ -19,7 +19,7 @@ class Station(Base):
 
     stop_code: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column()
-    timezone: Mapped[str] = mapped_column()
+    timezone: Mapped[str] = mapped_column(nullable=True)
 
 class RouteStop(Base):
     __tablename__ = "route_stop"
@@ -76,8 +76,46 @@ class Stop(Base):
             "platform": self.platform
         }
 
+def create_database_if_not_exists(
+        host: str = "rcc_db",
+        port: int = 5432,
+        user: str = "postgres",
+        password: str = "example",
+        db_name: str = "RailConnectionChecker",
+):
+    """
+    Create the database if it does not already exist
 
-# Base.metadata.create_all(engine)
+    :param host: Host
+    :param port: Post
+    :param user: Username
+    :param password: Password
+    :param db_name: Name of the database
+    :return:
+    """
+
+    # connect to the default 'postgres' database with autocommit so CREATE DATABASE can run
+    url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/postgres"
+    engine = create_engine(url, isolation_level="AUTOCOMMIT")
+
+    try:
+        with engine.connect() as conn:
+            exists = conn.execute(
+                text("SELECT 1 FROM pg_database WHERE datname = :d"),
+                {"d": db_name}
+            ).first()
+            if exists:
+                return
+
+            # CREATE DATABASE cannot be executed inside a transaction; using AUTOCOMMIT engine above
+            conn.execute(text(f'CREATE DATABASE "{db_name}"'))
+            print("Created Database")
+
+    except Exception as e:
+        return
+
+
+# Base.metadata.create_all(engine)safe_db_name
 #
 # with Session(engine) as session:
 #     new_route = Route(num=1, name="Test Limited")
