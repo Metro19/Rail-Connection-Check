@@ -1,0 +1,29 @@
+services:
+  rcc_frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - rcc_backend
+
+  rcc_backend:
+    build: ./backend
+    depends_on:
+      rcc_db:
+        condition: service_healthy
+
+  rcc_db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+
+volumes:
+  postgres-data:
