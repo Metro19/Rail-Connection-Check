@@ -10,25 +10,34 @@ function TrainViewer({trainOne, trainTwo} : {trainOne: string | null, trainTwo: 
     const [error, changeError] = useState<string | null>("Test Error");
     
     useEffect(() => {
-        fetch(`/api/compare_trains?route_one=${trainOne}&route_two=${trainTwo}`)
-            .then(response => {
-                if (response.status === 400) {
-                    return response.json().then(msg => {
+        // check for data to fetch
+        if (trainOne != null && trainTwo != null) {
+            fetch(`/api/compare_trains?route_one=${trainOne}&route_two=${trainTwo}`)
+                .then(async response => {
+                    if (response.status === 400) {
+                        const msg = await response.json();
                         changeError(msg["detail"] || "Bad Request");
                         changeConnData(null);
                         return null;
-                    });
-                }
-                else {
-                    return response.json()
-                }
-            })
-            .then(data => {changeConnData(data); changeError(null);})
-            .catch(() => {
-                changeError("Network Error");
-                changeConnData(null);
-            })
+                    }
+                    else {
+                        return response.json()
+                    }
+                })
+                .then(data => {
+                    if (data == null) {
+                        changeConnData(data);
+                        changeError(null);
+                    }
+                })
+                .catch(() => {
+                    changeError("Network Error");
+                    changeConnData(null);
+                })
+        }
     }, [trainOne, trainTwo]);
+
+    console.log(error);
 
     //  check for no trains selected
     if (trainOne === null || trainTwo === null) {

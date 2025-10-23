@@ -1,8 +1,6 @@
 services:
   rcc_frontend:
     build: ./frontend
-    ports:
-      - "80:80"
     depends_on:
       - rcc_backend
 
@@ -11,6 +9,8 @@ services:
     depends_on:
       rcc_db:
         condition: service_healthy
+    environment:
+      PYTHONUNBUFFERED: 1
 
   rcc_db:
     image: postgres

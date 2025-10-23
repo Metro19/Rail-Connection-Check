@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey, Engine, create_engine, nullsfirst, DateTime, 
 from sqlalchemy.orm import DeclarativeBase, Mapped, relationship, Session
 from sqlalchemy.testing.schema import mapped_column
 
+engine = create_engine("postgresql+psycopg://postgres:example@rcc_db:5432/RailConnectionChecker")
 
 class Base(DeclarativeBase):
     pass

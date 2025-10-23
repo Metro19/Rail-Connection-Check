@@ -6,23 +6,22 @@ import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, HTTPException
-from sqlalchemy import create_engine, select, text, and_
+from sqlalchemy import select, text, and_
 from sqlalchemy.orm import Session
 from starlette.middleware.cors import CORSMiddleware
 
-import datafetch
-from datafetch import get_data, engine
-from db import Route, Stop, Station
+from datafetch import get_data
+from db import Route, Stop, engine, create_database_if_not_exists
 
-# CORS setup
-origins = [
-   ' http://localhost:5173'
-]
+# db setup
+create_database_if_not_exists()
+get_data()
 
+# setup scheduler
 scheduler = BackgroundScheduler()
-trigger = IntervalTrigger(hours=1,
-                          start_date='2025-01-01 00:00:00')  # <-- CHANGED LINE (run every 24 hours, starting in 2025)
-scheduler.add_job(get_data, trigger)
+trigger = IntervalTrigger(seconds=10)
+trigger_one_hour = IntervalTrigger(hours=1)
+scheduler.add_job(get_data, trigger_one_hour)
 scheduler.start()
 
 # setup
@@ -35,12 +34,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Ensure the scheduler shuts down properly on application exit.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
     scheduler.shutdown()
-
 
 def generate_train_code(starting_code: str, starting_stop_departure: str) -> str:
     """
@@ -236,5 +233,4 @@ def intersecting_stations(route_one: str, route_two: str):
 if __name__ == "__main__":
     import uvicorn
 
-    datafetch.get_data()
     uvicorn.run(app, host="0.0.0.0", port=8000)

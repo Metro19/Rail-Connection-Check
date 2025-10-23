@@ -1,17 +1,12 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pytz import timezone
 
-from db import Route, Base, RouteStop, Station, Stop, Train, create_database_if_not_exists
+from db import Route, RouteStop, Station, Stop, Train, create_database_if_not_exists, engine
 from fetch_amtrak_json import fetch_json
-
-create_database_if_not_exists()
-engine = create_engine("postgresql+psycopg://postgres:example@rcc_db:5432/RailConnectionChecker")
-Base.metadata.create_all(engine)
-
 
 def generate_train_code(starting_code: str, starting_stop_departure: str) -> str:
     """
