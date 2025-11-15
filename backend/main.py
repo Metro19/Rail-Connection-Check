@@ -68,6 +68,31 @@ def get_trains():
 
     return all_routes
 
+@app.get("/intersecting_routes")
+def intersecting_routes_endpoint(route_one: str):
+    """
+    Check to see which trains share at least one station with each other
+
+    :param route_one: Route number of first train (e.g. 7)
+    :return: List of routes
+    """
+
+    with Session(engine) as session:
+        result = session.execute(text('''
+                         SELECT r2.route_id, r.name
+                         FROM station
+                                  INNER JOIN route_stop AS r1 ON r1.station_code = station.stop_code
+                                  INNER JOIN route_stop AS r2 ON r2.station_code = r1.station_code
+                                  INNER JOIN route AS r ON r.num = r2.route_id
+                         WHERE r1.route_id = '1' AND r2.route_id != r1.route_id
+                         GROUP BY r2.route_id, r.name
+                         ORDER BY r2.route_id::int;
+        ''')).all()
+
+        return [[route[0], route[1]] for route in result]
+
+
+
 @app.get("/compare_trains")
 def compare_trains_endpoint(route_one: str, route_two: str):
     """
@@ -236,5 +261,5 @@ def intersecting_stations(route_one: str, route_two: str):
 if __name__ == "__main__":
     import uvicorn
 
-    datafetch.get_data()
+    # datafetch.get_data()
     uvicorn.run(app, host="0.0.0.0", port=8000)

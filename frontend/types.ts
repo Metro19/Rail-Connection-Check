@@ -12,6 +12,11 @@ export interface StopData {
     platform: string
 }
 
+export interface Train {
+    route_number: string,
+    name: string
+}
+
 export interface TrainCompare {
     route_one_num: string,
     route_one_name: string,

@@ -1,5 +1,5 @@
 import type {StopData} from "../types.ts";
-import {Box, Center, Popover, Stack, Text} from "@mantine/core";
+import {Box, Center, Popover, Stack, Text, UnstyledButton} from "@mantine/core";
 import {DateTime} from "luxon";
 import {IconArrowDown} from "@tabler/icons-react";
 
@@ -34,7 +34,11 @@ export function DayView({stopOne, stopTwo, day} : {stopOne: StopData | null, sto
         <Popover>
             <Popover.Target>
                 <Box style={{border: bColor, borderRadius: "1rem"}} bg={bgColor}>
-                    <Text ta={"center"} pt={"xl"} pb={"xl"}>{connectionText}</Text>
+                    <Center>
+                        <UnstyledButton>
+                            <Text ta={"center"} pt={"xl"} pb={"xl"}>{connectionText}</Text>
+                        </UnstyledButton>
+                    </Center>
                 </Box>
             </Popover.Target>
             <Popover.Dropdown>
