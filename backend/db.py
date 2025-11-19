@@ -115,7 +115,7 @@ def create_database_if_not_exists(
         return
 
 
-# Base.metadata.create_all(engine)safe_db_name
+# Base.metadata.create_all(engine)
 #
 # with Session(engine) as session:
 #     new_route = Route(num=1, name="Test Limited")
