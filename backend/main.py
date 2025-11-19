@@ -132,7 +132,7 @@ def compare_trains_endpoint(route_one: str, route_two: str):
 def compare_trains(route_one: str, route_two: str, station: str) -> tuple[tuple[List[Union[Stop, None]], str],
 tuple[List[Union[Stop, None]], str]] | None:
     """
-    Compare two trains at a given station over the past 7 days
+    Compare two trains at a given station over the past 28 days
 
     :param route_one: Route number of first train (e.g. 7)
     :param route_two: Route number of second train (e.g. 504)
@@ -196,15 +196,19 @@ def get_departures_one_train(route: str, station: str) -> Sequence[Stop]:
 
     with Session(engine) as session:
         thirty_days_ago = datetime.now().replace(hour=23, minute=59, second=59, tzinfo=pytz.timezone("US/Eastern")) - timedelta(days=28)
+        now = datetime.now()
         departures = session.execute(
             select(Stop)
             .where(and_(
                 Stop.route_id == route,
                 Stop.station_id == station,
-                Stop.sch_dep >= thirty_days_ago)
+                Stop.sch_dep >= thirty_days_ago,
+                Stop.sch_dep <= now)
             )
-            .order_by(Stop.sch_dep.asc())
+            .order_by(Stop.sch_dep.desc())
         ).scalars().all()
+
+        print(departures)
 
         return departures
 
@@ -236,5 +240,5 @@ def intersecting_stations(route_one: str, route_two: str):
 if __name__ == "__main__":
     import uvicorn
 
-    datafetch.get_data()
+    # datafetch.get_data()
     uvicorn.run(app, host="0.0.0.0", port=8000)
