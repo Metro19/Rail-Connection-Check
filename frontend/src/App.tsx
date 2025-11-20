@@ -16,7 +16,7 @@ function App() {
             <Box style={{height: "100vh"}}>
                 <Group justify={"space-between"} pl={"lg"} pr={"lg"} style={{top: 0}}>
                     <UnstyledButton onClick={() => {changeTrainOne(null); changeTrainTwo(null);}}><Title size={"4rem"}>Rail Connection Checker</Title></UnstyledButton>
-                    <CornerActions trainOne={trainOne} trainTwo={trainTwo} changeTrainOne={changeTrainOne} changeTrainTwo={changeTrainTwo}/>
+                    <CornerActions/>
                 </Group>
                 <Box style={{alignContent: "start"}}>
                     <Divider m={"md"}/>

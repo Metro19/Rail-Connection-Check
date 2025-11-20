@@ -84,10 +84,10 @@ def intersecting_routes_endpoint(route_one: str):
                                   INNER JOIN route_stop AS r1 ON r1.station_code = station.stop_code
                                   INNER JOIN route_stop AS r2 ON r2.station_code = r1.station_code
                                   INNER JOIN route AS r ON r.num = r2.route_id
-                         WHERE r1.route_id = '1' AND r2.route_id != r1.route_id
+                         WHERE r1.route_id = :r1_id AND r2.route_id != r1.route_id
                          GROUP BY r2.route_id, r.name
                          ORDER BY r2.route_id::int;
-        ''')).all()
+        '''), {"r1_id": route_one}).all()
 
         return [[route[0], route[1]] for route in result]
 

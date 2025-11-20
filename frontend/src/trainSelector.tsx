@@ -30,7 +30,6 @@ function nameFromRoute(trainData: TrainList, route: string): string {
     let routeName = "";
 
     trainData.forEach((train) => {
-        console.log(route + train[0]);
         if (route === train[0]) {
             routeName = train[1];
         }
@@ -53,7 +52,7 @@ function TrainSelector({trainOne, trainTwo, changeTrainOne, changeTrainTwo}:
 
     useEffect(() => {
         if (trainOne != null) {
-        fetch('/api/intersecting_routes?route_one=' + trainOne)
+        fetch('/api/intersecting_routes?route_one=' + trainOne.route_number)
             .then(response => response.json())
             .then(data => {changeIntersectingRoutes(data); changeLoading(false);})
         }
