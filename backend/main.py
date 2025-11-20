@@ -66,6 +66,17 @@ def get_trains():
         for route in session.scalars(select(Route)):
             all_routes.append((route.num, route.name))
 
+    def _route_sort_key(route):
+        try:
+            return 0, int(route[0])
+        except ValueError:
+            if "v" in route[0]:
+                return 1, 99999 + int(route[0].replace("v", ""))
+            if "b" in route[0]:
+                return 1, 19999 + int(route[0].replace("b", ""))
+            return 1, str(route[0]).lower()
+
+    all_routes.sort(key=_route_sort_key)
     return all_routes
 
 @app.get("/intersecting_routes")
@@ -79,17 +90,31 @@ def intersecting_routes_endpoint(route_one: str):
 
     with Session(engine) as session:
         result = session.execute(text('''
-                         SELECT r2.route_id, r.name
+                         SELECT r2.route_id, route2.name
                          FROM station
                                   INNER JOIN route_stop AS r1 ON r1.station_code = station.stop_code
                                   INNER JOIN route_stop AS r2 ON r2.station_code = r1.station_code
-                                  INNER JOIN route AS r ON r.num = r2.route_id
-                         WHERE r1.route_id = :r1_id AND r2.route_id != r1.route_id
-                         GROUP BY r2.route_id, r.name
-                         ORDER BY r2.route_id::int;
+                                  INNER JOIN route AS route1 ON route1.num = r1.route_id
+                                  INNER JOIN route AS route2 ON route2.num = r2.route_id
+                         WHERE r1.route_id = :r1_id AND r2.route_id != r1.route_id AND route1.name != route2.name
+                         GROUP BY r2.route_id, route2.name
         '''), {"r1_id": route_one}).all()
 
-        return [[route[0], route[1]] for route in result]
+
+        def _route_sort_key(route):
+            try:
+                return 0, int(route[0])
+            except ValueError:
+                if "v" in route[0]:
+                    return 1, 99999 + int(route[0].replace("v", ""))
+                if "b" in route[0]:
+                    return 1, 19999 + int(route[0].replace("b", ""))
+                return 1, str(route[0]).lower()
+
+        l = [[route[0], route[1]] for route in result]
+        l.sort(key=_route_sort_key)
+
+        return l
 
 
 

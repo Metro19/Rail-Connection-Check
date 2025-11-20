@@ -1,5 +1,11 @@
-import {ActionIcon, Center, Group, SimpleGrid, Space, Stack, Text} from '@mantine/core';
-import {IconAlertTriangle, IconArrowBackUp, IconArrowRight, IconMapRoute, IconTrack} from "@tabler/icons-react";
+import {ActionIcon, Button, Center, Group, SimpleGrid, Space, Stack, Text} from '@mantine/core';
+import {
+    IconAlertTriangle,
+    IconArrowBackUp,
+    IconArrowRight,
+    IconBackspaceFilled,
+    IconMapRoute
+} from "@tabler/icons-react";
 import {type Dispatch, useEffect, useState} from "react";
 import type {Train, TrainCompare} from "../types.ts";
 import {DateTime} from "luxon";
@@ -8,10 +14,11 @@ import {DayView} from "./dayView.tsx";
 function TrainViewer({trainOne, trainTwo, changeTrainOne, changeTrainTwo} : {trainOne: Train | null, trainTwo: Train | null, changeTrainOne: Dispatch<Train | null>, changeTrainTwo: Dispatch<Train | null>}) {
     const [connData, changeConnData] = useState<TrainCompare | null>(null);
     const [error, changeError] = useState<string | null>("Test Error");
-    
+
     useEffect(() => {
         fetch(`/api/compare_trains?route_one=${trainOne?.route_number}&route_two=${trainTwo?.route_number}`)
             .then(response => {
+                // return response.json()
                 if (response.status === 400) {
                     return response.json().then(msg => {
                         changeError(msg["detail"] || "Bad Request");
@@ -20,35 +27,25 @@ function TrainViewer({trainOne, trainTwo, changeTrainOne, changeTrainTwo} : {tra
                     });
                 }
                 else {
-                    return response.json()
+                    return response.json().then(data => {changeConnData(data); changeError(null);})
                 }
-            })
-            .then(data => {changeConnData(data); changeError(null);})
-            .catch(() => {
-                changeError("Network Error");
-                changeConnData(null);
             })
     }, [trainOne, trainTwo]);
 
-    //  check for no trains selected
-    if (trainOne === null || trainTwo === null) {
-        return (
-            <Center h={"75vh"}>
-                <Stack align={"center"}>
-                    <IconTrack size={"4rem"}/>
-                    <Text size={"lg"}>Select Routes</Text>
-                </Stack>
-            </Center>
-        )
-    }
-
     // check for error
-    else if (error != null) {
+    if (error != null) {
         return (
             <Center h={"75vh"}>
-                <Stack align={"center"} bg={"red"} p={"5rem"} style={{borderRadius: "1rem"}}>
-                    <IconAlertTriangle size={"4rem"} color={"black"}/>
-                    <Text size={"lg"} c={"black"}>{error}</Text>
+                <Stack gap={0}>
+                    <Stack m={"xs"} align={"center"} bg={"red"} p={"5rem"} style={{borderRadius: "1rem"}}>
+                        <IconAlertTriangle size={"4rem"} color={"black"}/>
+                        <Text size={"md"} c={"black"}>{error}</Text>
+                    </Stack>
+                    <Button bg={"red"} m={"xs"} c={"black"} leftSection={<IconBackspaceFilled/>}
+                            onClick={() => {changeTrainOne(null); changeTrainTwo(null); changeError(null);}}
+                    >
+                        Restart
+                    </Button>
                 </Stack>
             </Center>
         )

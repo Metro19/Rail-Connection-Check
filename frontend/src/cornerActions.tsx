@@ -10,22 +10,25 @@ export default function CornerActions() {
         defaultValue: 15,
     });
 
-    return (<Group>
-        <Stack pl={"xs"} pt={"xs"} gap={"xs"}>
-            <ActionIcon variant={"outline"} aria-label={"Settings"} onClick={() => changeModal(true)}>
+    return (
+        <>
+            <ActionIcon aria-label={"Settings"} onClick={() => changeModal(true)}>
                 <IconSettings/>
             </ActionIcon>
             <Modal opened={modal} onClose={() => changeModal(false)} title={"Settings"}>
                 <Stack>
-                    <h3 style={{margin: 0}}>Connection Timings</h3>
+                    <Stack gap={0}>
+                        <h3 style={{margin: 0}}>Connection Timings</h3>
+                        <h5 style={{margin: 0}}>Minutes between departure per color:</h5>
+                    </Stack>
                     <Group grow gap={"xs"}>
                         <Box bg={"green"}>
                             <Text c={"white"} ta={"center"}>Good</Text>
-                            <Text c={"white"} ta={"center"}>{minimumConnectionTime + 1}+ minutes</Text>
+                            <Text c={"white"} ta={"center"}>{minimumConnectionTime + 1}+</Text>
                         </Box>
                         {(minimumConnectionTime > 0) && <Box bg={"yellow"}>
                             <Text c={"black"} ta={"center"}>Tight</Text>
-                            <Text c={"black"} ta={"center"}>{minimumConnectionTime} to 0 minutes</Text>
+                            <Text c={"black"} ta={"center"}>{minimumConnectionTime} to 0</Text>
                         </Box>}
                         <Box bg={"red"}>
                             <Text c={"white"} ta={"center"}>Missed</Text>
@@ -42,6 +45,6 @@ export default function CornerActions() {
                     />
                 </Stack>
             </Modal>
-        </Stack>
-    </Group>)
+        </>
+    )
 }
